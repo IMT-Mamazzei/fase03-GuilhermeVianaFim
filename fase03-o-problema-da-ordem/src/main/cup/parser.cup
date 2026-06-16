@@ -3,16 +3,15 @@ package br.maua.cic303;
 import java_cup.runtime.*;
 
 parser code {:
-    // Método chamado pelo CUP quando encontra um erro sintático
+    // Método padrão do CUP para interceptar erros sintáticos e lançar exceção para o JUnit
     public void syntax_error(Symbol cur_token) {
         throw new RuntimeException("Erro Sintático na linha " + cur_token.left + ", coluna " + cur_token.right);
     }
 :}
 
 /* ========================================================================= */
-/* DECLARAÇÃO DOS TOKENS (TERMINAIS)                                         */
+/* DECLARAÇÃO DOS TOKENS (TERMINAIS EXIGIDOS PELO MAZZEI)                    */
 /* ========================================================================= */
-
 terminal IF, THEN, ELSE, WHILE;
 terminal ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI;
 terminal String ID, NUMBER;
@@ -21,59 +20,57 @@ terminal String ADD_OP, MUL_OP, REL_OP;
 /* ========================================================================= */
 /* DECLARAÇÃO DOS NÃO-TERMINAIS (VARIÁVEIS DA GRAMÁTICA)                     */
 /* ========================================================================= */
-
 non terminal program, stmt_list, stmt;
 non terminal assign_stmt, if_stmt, while_stmt, block_stmt, null_stmt;
 non terminal expr;
 
 /* ========================================================================= */
-/* PRECEDÊNCIA E ASSOCIATIVIDADE                                             */
+/* PRECEDÊNCIA E ASSOCIATIVIDADE (RESOLVE O PROBLEMA DA ORDEM)                */
 /* ========================================================================= */
-
 precedence nonassoc IF, THEN;
-precedence nonassoc ELSE;  // Resolve o conflito Shift/Reduce clássico do if/else
-precedence left REL_OP; 
-precedence left ADD_OP; 
-precedence left MUL_OP; 
+precedence nonassoc ELSE;  // Força o 'else' a casar com o 'if' mais interno imediatamente
+precedence left REL_OP;    // Menor precedência dos operadores lógicos
+precedence left ADD_OP;    // + e - resolvem depois de * e /
+precedence left MUL_OP;    // *, / e % têm a maior precedência matemática
 
 /* ========================================================================= */
-/* REGRAS DA GRAMÁTICA                                                       */
+/* REGRAS DA GRAMÁTICA (BNF PURA)                                            */
 /* ========================================================================= */
 
 start with program;
 
-// Um programa é uma lista de comandos
+// Um programa na linguagem JACA é uma lista de comandos
 program ::= stmt_list ;
 
-// Definição de lista recursiva no BNF à esquerda (Exigência do CUP)
+// Lista de comandos com recursão à esquerda (obrigatório para analisadores LALR/CUP)
 stmt_list ::= stmt_list stmt
             | stmt ;
 
-// Declaração unificada dos comandos
+// Mapeamento dos tipos de comandos aceitos
 stmt ::= assign_stmt
        | if_stmt
        | while_stmt
        | block_stmt
        | null_stmt ;
 
-// Atribuição
+// Atribuição: ID = expressao ;
 assign_stmt ::= ID ASSIGN expr SEMI ;
 
-// Estrutura Condicional If/Then/[Else]
+// Estrutura Condicional If (com e sem Else)
 if_stmt ::= IF LPAREN expr RPAREN THEN stmt
           | IF LPAREN expr RPAREN THEN stmt ELSE stmt ;
 
 // Estrutura de Repetição While
 while_stmt ::= WHILE LPAREN expr RPAREN stmt ;
 
-// Bloco de comandos (Pode conter comandos ou ser vazio {})
+// Bloco de comandos delimitado por chaves { } (pode conter subcomandos ou ser vazio)
 block_stmt ::= LBRACE stmt_list RBRACE
              | LBRACE RBRACE ;
 
-// Comando Nulo (Null statement)
+// Comando Nulo composto apenas por ponto e vírgula
 null_stmt ::= SEMI ;
 
-// Regras de expressões aritméticas, relacionais e fatores
+// Expressões matemáticas, relacionais, chamadas de ID, números e parênteses
 expr ::= expr ADD_OP expr
        | expr MUL_OP expr
        | expr REL_OP expr
