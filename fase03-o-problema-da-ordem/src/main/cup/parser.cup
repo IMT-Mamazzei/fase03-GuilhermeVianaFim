@@ -23,25 +23,26 @@ precedence left REL_OP;
 precedence left ADD_OP; 
 precedence left MUL_OP; 
 
-/* --- REGRAS DA GRAMÁTICA (BNF Pura) --- */
+/* --- REGRAS DA GRAMÁTICA --- */
 start with programa;
 
-// Um programa é uma lista de comandos
+// O programa principal
 programa ::= lista_com ;
 
-// { lista_de_comandos } em BNF pura usando recursão à esquerda
+// Lista de comandos (recursão à esquerda obrigatória para o CUP)
 lista_com ::= lista_com com
             | com ;
 
-// Estruturas de comandos da linguagem JACA
+// Estruturas de comandos exatas da linguagem JACA
 com ::= ID ASSIGN expr SEMI
       | IF LPAREN expr RPAREN THEN com
       | IF LPAREN expr RPAREN THEN com ELSE com
       | WHILE LPAREN expr RPAREN com
       | LBRACE lista_com RBRACE
-      | SEMI ; // Comando nulo
+      | LBRACE RBRACE              // Permite blocos vazios {} se o teste exigir
+      | SEMI ;                     // Null statement
 
-// Expressões matemáticas e relacionais agrupadas pelas classes de tokens
+// Expressões sem ambiguidade
 expr ::= expr ADD_OP expr
        | expr MUL_OP expr
        | expr REL_OP expr
