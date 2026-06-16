@@ -19,6 +19,8 @@ non terminal com;
 non terminal expr;
 
 /* --- PRECEDÊNCIA E ASSOCATIVIDADE --- */
+precedence nonassoc IF, THEN;
+precedence nonassoc ELSE;                // Resolve o conflito Shift/Reduce do if/else
 precedence left REL_OP; 
 precedence left ADD_OP; 
 precedence left MUL_OP; 
@@ -39,8 +41,8 @@ com ::= ID ASSIGN expr SEMI
       | IF LPAREN expr RPAREN THEN com ELSE com
       | WHILE LPAREN expr RPAREN com
       | LBRACE lista_com RBRACE
-      | LBRACE RBRACE              // Permite blocos vazios {} se o teste exigir
-      | SEMI ;                     // Null statement
+      | LBRACE RBRACE              
+      | SEMI ;                     
 
 // Expressões sem ambiguidade
 expr ::= expr ADD_OP expr
