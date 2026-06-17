@@ -2,73 +2,59 @@ package br.maua.cic303;
 
 import java_cup.runtime.*;
 
+/* Força o CUP a gerar o arquivo com o nome da classe exatamente em minúsculo, como o JUnit chama */
+class parser;
+
 parser code {:
-    // Intercepta erros sintáticos e lança exceção para o JUnit capturar no try/catch
     public void syntax_error(Symbol cur_token) {
         throw new RuntimeException("Erro Sintático na linha " + cur_token.left + ", coluna " + cur_token.right);
     }
 :}
 
-/* ========================================================================= */
-/* DECLARAÇÃO DOS TOKENS (TERMINAIS EXIGIDOS)                                */
-/* ========================================================================= */
+/* TERMINAIS EXIGIDOS PELO TESTE */
 terminal IF, THEN, ELSE, WHILE;
 terminal ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI;
 terminal String ID, NUMBER;
 terminal String ADD_OP, MUL_OP, REL_OP;
 
-/* ========================================================================= */
-/* DECLARAÇÃO DOS NÃO-TERMINAIS (VARIÁVEIS DA GRAMÁTICA)                     */
-/* ========================================================================= */
+/* NÃO-TERMINAIS */
 non terminal program, stmt_list, stmt;
 non terminal assign_stmt, if_stmt, while_stmt, block_stmt, null_stmt;
 non terminal expr;
 
-/* ========================================================================= */
-/* PRECEDÊNCIA E ASSOCIATIVIDADE (RESOLVE O PROBLEMA DA ORDEM)                */
-/* ========================================================================= */
-precedence left REL_OP;    // Menor precedência
-precedence left ADD_OP;    // + e - resolvem depois
-precedence left MUL_OP;    // *, / e % têm a maior precedência matemática
-
-/* ========================================================================= */
-/* REGRAS DA GRAMÁTICA (BNF PURA ALINHADA COM O ENUNCIADO)                   */
-/* ========================================================================= */
+/* PRECEDÊNCIA CORRETA (Sem conflitos LALR) */
+precedence nonassoc IF, THEN;
+precedence nonassoc ELSE;
+precedence left REL_OP; 
+precedence left ADD_OP; 
+precedence left MUL_OP; 
 
 start with program;
 
-// Um programa é uma lista de comandos
 program ::= stmt_list ;
 
-// Lista de comandos com recursão à esquerda puro para o CUP
 stmt_list ::= stmt_list stmt
             | stmt ;
 
-// Mapeamento exato dos tipos de comandos aceitos
 stmt ::= assign_stmt
        | if_stmt
        | while_stmt
        | block_stmt
        | null_stmt ;
 
-// Atribuição: ID = expressao ;
 assign_stmt ::= ID ASSIGN expr SEMI ;
 
-// Estrutura If: if ( expressao ) then bloco [else bloco] seguindo estritamente o enunciado
+// O teste usa estruturas em blocos com chaves { }
 if_stmt ::= IF LPAREN expr RPAREN THEN block_stmt
           | IF LPAREN expr RPAREN THEN block_stmt ELSE block_stmt ;
 
-// Estrutura While: while ( expressao ) bloco
 while_stmt ::= WHILE LPAREN expr RPAREN block_stmt ;
 
-// Bloco: { lista_de_comandos } ou bloco vazio
 block_stmt ::= LBRACE stmt_list RBRACE
              | LBRACE RBRACE ;
 
-// Comando Nulo composto por ponto e vírgula (Ex: ; ou ; ; ;)
 null_stmt ::= SEMI ;
 
-// Expressões matemáticas, relacionais e parênteses
 expr ::= expr ADD_OP expr
        | expr MUL_OP expr
        | expr REL_OP expr
